@@ -11,9 +11,11 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type DecodeHookFunc func(reflect.Kind, reflect.Kind, interface{}) (interface{}, error)
@@ -486,6 +488,16 @@ func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) er
 		} else {
 			return fmt.Errorf("cannot parse '%s' as int: %s", name, err)
 		}
+	case dataKind == reflect.String:
+		// check for time.duration compatible string and convert
+		if StringIsDuration(data.(string)) {
+			t, err := time.ParseDuration(data.(string))
+			if err != nil {
+				return fmt.Errorf("cannot parse '%s' as time.duration: %s", name, err)
+			}
+			val.Set(reflect.ValueOf(t))
+		}
+
 	default:
 		return fmt.Errorf(
 			"'%s' expected type '%s', got unconvertible type '%s'",
@@ -854,4 +866,15 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 	}
 
 	return nil
+}
+
+func StringIsDuration(s string) bool {
+	// check for trailing ns,us,ms,s,m,h on a string starting with a digit
+	// a single decimal point can exist
+	fmt.Printf("s:%s\n", s)
+	if regexp.MustCompile(`^[\d]+\.*[\d]*(ns|us|µs|ms|s|m|h)`).MatchString(s) == true {
+		return true
+	} else {
+		return false
+	}
 }
