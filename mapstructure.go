@@ -871,7 +871,6 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 func StringIsDuration(s string) bool {
 	// check for trailing ns,us,ms,s,m,h on a string starting with a digit
 	// a single decimal point can exist
-	fmt.Printf("s:%s\n", s)
 	if regexp.MustCompile(`^[\d]+\.*[\d]*(ns|us|µs|ms|s|m|h)`).MatchString(s) == true {
 		return true
 	} else {
